@@ -1,0 +1,7 @@
+pydantic~=2.11.7
+pydantic-settings~=2.10.1
+PyYAML~=6.0.2
+langchain-openai~=0.3.27
+langchain-core~=0.3.68
+langgraph~=0.5.2
+python-json-logger
