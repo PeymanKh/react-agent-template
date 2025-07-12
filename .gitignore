@@ -190,3 +190,5 @@ firebase_adminsdk.json
 deploy.sh
 
 auth/generate_custom_token.py
+
+.langgraph_api

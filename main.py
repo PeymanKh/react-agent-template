@@ -3,7 +3,7 @@ Main application entry point for React Agent Template
 Demonstrates the React agent workflow with professional logging and configuration
 """
 from langchain_core.messages import HumanMessage, SystemMessage
-from langgraph.graph import add_messages
+from langgraph.checkpoint.mongodb import MongoDBSaver
 
 from src.graph import build_graph
 from src.state import MessageState
@@ -24,40 +24,46 @@ def main():
     logger.info(f"Environment: {config.environment}")
 
     try:
-        # Build the React agent graph
-        logger.info("Building React agent graph...")
-        agent_graph = build_graph()
-        logger.info("React agent graph built successfully")
+        # Use MongoDB checkpointer with context manager
+        with MongoDBSaver.from_conn_string(config.db_uri) as checkpointer:
 
-        # 4. Create initial state with user message
-        user_query = "what is twice of 10 + 10?"
+            # Build the React agent graph with checkpointer
+            logger.info("Building React agent graph with MongoDB checkpointer...")
+            agent_graph = build_graph(checkpointer)
+            logger.info("React agent graph built successfully")
 
-        initial_state = MessageState(messages=[
-            SystemMessage(content=AGENT_SYSTEM_PROMPT),
-            HumanMessage(content=user_query)]
-        )
+            # Create initial state with user message
+            user_query = "what is 2 times that number?"
 
-        logger.info(f"Processing user query: {user_query}")
+            initial_state = MessageState(messages=[
+                SystemMessage(content=AGENT_SYSTEM_PROMPT),
+                HumanMessage(content=user_query)]
+            )
 
-        # 5. Run the agent
-        logger.info("Agent processing started...")
-        result = agent_graph.invoke(initial_state)
+            logger.info(f"Processing user query: {user_query}")
 
-        # 6. Display results
-        logger.info("Agent processing completed successfully")
+            # Run the agent
+            logger.info("Agent processing started...")
 
-        for m in result['messages']:
-            m.pretty_print()
+            # Specify a thread
+            memory_config = {"configurable": {"thread_id": "1"}}
+            result = agent_graph.invoke(initial_state, memory_config)
 
-        # 7. Log final statistics
-        logger.info("Agent execution summary", extra={
-            "total_messages": len(result['messages']),
-            "user_messages": len([m for m in result['messages'] if hasattr(m, 'type') and m.type == 'human']),
-            "assistant_messages": len([m for m in result['messages'] if hasattr(m, 'type') and m.type == 'ai']),
-            "tool_messages": len([m for m in result['messages'] if hasattr(m, 'type') and m.type == 'tool'])
-        })
+            # Display results
+            logger.info("Agent processing completed successfully")
 
-        logger.info("Application completed successfully")
+            for m in result['messages']:
+                m.pretty_print()
+
+            # Log final statistics
+            logger.info("Agent execution summary", extra={
+                "total_messages": len(result['messages']),
+                "user_messages": len([m for m in result['messages'] if hasattr(m, 'type') and m.type == 'human']),
+                "assistant_messages": len([m for m in result['messages'] if hasattr(m, 'type') and m.type == 'ai']),
+                "tool_messages": len([m for m in result['messages'] if hasattr(m, 'type') and m.type == 'tool'])
+            })
+
+            logger.info("Application completed successfully")
 
     except Exception as e:
         logger.error(f"Application error: {e}", exc_info=True)

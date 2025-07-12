@@ -39,9 +39,13 @@ class LangChainConfig(BaseSettings):
     log_level: LogLevel = Field(description="Logging level")
     log_format: str = Field(description="Log format")
 
-    # GCP SETTINGS - MADE MANDATORY
+    # GCP SETTINGS
     project_id: str = Field(description="GCP Project ID")
     region: str = Field(description="GCP Region")
+
+    # DATABASE SETTINGS
+    db_uri: str = Field(description="Database URI")
+
 
     # LLM PROVIDER SETTINGS
     langchain_api_key: SecretStr = Field(description="Langchain API key")

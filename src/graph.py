@@ -1,15 +1,16 @@
 """
 React-agent workflow implementation using langgraph
 """
+from pymongo import MongoClient
+
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage
-from langgraph.graph import StateGraph, START, END, add_messages
+from langgraph.graph import StateGraph, START, add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
+from langgraph.checkpoint.mongodb import MongoDBSaver
 
 import src.tools as agent_tools
 from src.config.config import config
 from src.state import MessageState
-from src.prompts import AGENT_SYSTEM_PROMPT
 from src.config.logging_config import get_logger
 
 
@@ -57,7 +58,7 @@ def assistant_node(state: MessageState) -> MessageState:
 
 
 
-def build_graph():
+def build_graph(checkpointer):
     try:
         # Create builder
         builder = StateGraph(MessageState)
@@ -79,7 +80,8 @@ def build_graph():
         builder.add_conditional_edges("assistant_node", tools_condition)
         builder.add_edge("tools", "assistant_node")
 
-        react_graph = builder.compile()
+        # Use the passed checkpointer
+        react_graph = builder.compile(checkpointer=checkpointer)
 
         return react_graph
 
